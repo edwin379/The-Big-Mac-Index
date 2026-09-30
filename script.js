@@ -236,100 +236,7 @@ const s4 = {
 };
 
 /* =========================================================
-   Slide 5 — quiz: which is cheaper?
-   ========================================================= */
-const s5 = {
-  round: 0, results: [], pair: null, used: new Set(), done: false,
-  pool: D.latest.map(r => r[0]),
-  init() {
-    $$("#vs .card").forEach(c => c.addEventListener("click", () => this.pick(+c.dataset.side)));
-    $("#quizNext").addEventListener("click", () => {
-      if (this.done) this.reset();
-      else if (this.round >= 4) this.finish();
-      else { this.round++; this.deal(); }
-    });
-    this.reset(true);
-  },
-  reset(silent) {
-    this.round = 0; this.results = []; this.used.clear(); this.done = false;
-    this.deal(silent);
-  },
-  newPair() {
-    if (this.round === 0) return Math.random() < .5 ? ["JPN", "KOR"] : ["KOR", "JPN"];
-    for (let k = 0; k < 200; k++) {
-      const a = this.pool[Math.floor(Math.random() * this.pool.length)];
-      const b = this.pool[Math.floor(Math.random() * this.pool.length)];
-      const key = [a, b].sort().join();
-      if (a !== b && !this.used.has(key) && Math.abs(ROW[a][4] - ROW[b][4]) >= 0.35) { this.used.add(key); return [a, b]; }
-    }
-    return ["CHE", "IND"];
-  },
-  deal(silent) {
-    this.pair = this.newPair();
-    $$("#vs .card").forEach((c, k) => {
-      c.disabled = false;
-      c.classList.remove("win", "picked", "wrong");
-      $(".cn", c).textContent = nm(this.pair[k]);
-      $(".cp", c).textContent = "?";
-      $(".bgr", c).style.transform = "scale(.8)";
-      if (!silent) restartAnim(c, "deal");
-    });
-    $("#quizNext").hidden = true;
-    $("#quizMsg").innerHTML = L(`第${this.round + 1}問 / 5`, `Question ${this.round + 1} of 5`);
-    this.drawScore();
-  },
-  pick(side) {
-    const cards = $$("#vs .card");
-    if (cards[0].disabled) return;
-    const p = this.pair.map(c => ROW[c][4]);
-    const cheaper = p[0] < p[1] ? 0 : 1, ok = side === cheaper;
-    this.results.push(ok);
-    const mx = Math.max(...p);
-    cards.forEach((c, k) => {
-      c.disabled = true;
-      const out = $(".cp", c);
-      tween(0, p[k], 900, v => { out.textContent = usd(v); });
-      $(".bgr", c).style.transform = `scale(${(p[k] / mx).toFixed(3)})`;
-    });
-    cards[side].classList.add("picked");
-    if (!ok) cards[side].classList.add("wrong");
-    later.add(() => cards[cheaper].classList.add("win"), reduce ? 0 : 700);
-    $("#quizMsg").innerHTML = ok
-      ? `<b class="good">${L("正解！", "Correct!")}</b> ${L(`${nm(this.pair[cheaper])}の方が安い`, `${nm(this.pair[cheaper])} is cheaper`)}`
-      : `<b class="bad">${L("ざんねん…", "Not quite.")}</b> ${L(`安いのは${nm(this.pair[cheaper])}`, `${nm(this.pair[cheaper])} is cheaper`)}`;
-    const btn = $("#quizNext");
-    btn.textContent = this.round >= 4 ? L("結果を見る", "See result") : L("次の問題", "Next question");
-    btn.hidden = false;
-    this.drawScore();
-  },
-  finish() {
-    this.done = true;
-    const n = this.results.filter(Boolean).length;
-    $("#quizMsg").innerHTML = `<b>${L(`5問中 ${n}問 正解！`, `You got ${n} of 5!`)}</b> ${n >= 4 ? L("ビッグマック博士です。", "Big Mac expert.") : L("意外と難しい？", "Harder than it looks?")}`;
-    $("#quizNext").textContent = L("もう一回", "Play again");
-    this.drawScore();
-  },
-  drawScore() {
-    $("#score").innerHTML = Array.from({ length: 5 }, (_, k) => {
-      const r = this.results[k];
-      const cls = r === true ? "ok" : r === false ? "ng" : (k === this.round && !this.done && this.results.length === k ? "now" : "");
-      return `<span class="${cls}"></span>`;
-    }).join("");
-  },
-  render() {
-    $$("#vs .card").forEach((c, k) => { $(".cn", c).textContent = nm(this.pair[k]); });
-    if ($$("#vs .card")[0].disabled) {
-      if (this.done) this.finish(); else {
-        const btn = $("#quizNext");
-        btn.textContent = this.round >= 4 ? L("結果を見る", "See result") : L("次の問題", "Next question");
-      }
-    } else $("#quizMsg").innerHTML = L(`第${this.round + 1}問 / 5`, `Question ${this.round + 1} of 5`);
-  },
-  enter() { if (!$$("#vs .card")[0].disabled) $$("#vs .card").forEach(c => restartAnim(c, "deal")); }
-};
-
-/* =========================================================
-   Slide 6 — what ¥1,000 buys
+   Slide 5 — what ¥1,000 buys
    ========================================================= */
 const s6 = {
   list: ["CHE", "GBR", "USA", "KOR", "CHN", "JPN", "IND", "IDN"],
@@ -372,167 +279,131 @@ const s6 = {
 };
 
 /* =========================================================
-   Slide 7 — world map with burgers sized by dollar price
+   Slide 6 — lineup: all 54 countries by region and price
    ========================================================= */
-const sMap = {
-  W: window.WORLD,
+const sLine = {
   NS: "http://www.w3.org/2000/svg",
-  vb: [0, 0, 1000, 520],
-  sel: "JPN", region: "world", stop: null,
-  REGIONS: {
-    world: null,
-    americas: ["USA","CAN","MEX","GTM","HND","NIC","CRI","COL","VEN","PER","BRA","CHL","ARG","URY"],
-    europe: ["CHE","EUZ","GBR","NOR","SWE","DNK","POL","CZE","HUN","ROU","MDA","UKR","TUR"],
-    mideast: ["EGY","ISR","JOR","LBN","SAU","KWT","BHR","QAT","ARE","OMN","AZE","PAK"],
-    asia: ["CHN","JPN","KOR","TWN","HKG","VNM","THA","MYS","SGP","IDN","PHL","IND","LKA","AUS","NZL"]
-  },
-
-  /* burger width in viewBox units for a given view width */
-  size(price, vbw = this.vb[2]) {
-    const phone = innerWidth < 760 ? 1.3 : 1;
-    return price * 3.4 * phone * Math.pow(vbw / 1000, 0.5);
-  },
+  sel: "JPN",
+  LANES: [
+    ["eu", ["ヨーロッパ", "Europe"], "CHE EUZ GBR NOR SWE DNK POL CZE HUN ROU MDA UKR TUR"],
+    ["am", ["アメリカ大陸", "Americas"], "USA CAN MEX GTM HND NIC CRI COL VEN PER BRA CHL ARG URY"],
+    ["me", ["中東・アフリカ", "Middle East & Africa"], "EGY ISR JOR LBN SAU KWT BHR QAT ARE OMN AZE ZAF"],
+    ["ap", ["アジア・太平洋", "Asia-Pacific"], "CHN JPN KOR TWN HKG VNM THA MYS SGP IDN PHL IND LKA PAK AUS NZL"]
+  ],
+    X0: 190, X1: 975, P0: 2, P1: 9.5, TOP: 40, LANE: 128,
+  x(p) { return this.X0 + (p - this.P0) / (this.P1 - this.P0) * (this.X1 - this.X0); },
+  w(p) { return 12 + p * 2.9; },
 
   init() {
-    $("#land").innerHTML = this.W.shapes.map(([iso, d]) =>
-      `<path d="${d}"${iso && ROW[iso] ? ` class="has" data-c="${iso}"` : ""}/>`).join("");
-    const pins = $("#pins");
-    const list = D.latest.filter(r => this.W.points[r[0]]).sort((a, b) => b[4] - a[4]);
-    this.pins = list.map(r => {
-      const [x, y] = this.W.points[r[0]];
+    const pinsG = $("#lnPins");
+    this.pins = [];
+    this.LANES.forEach(([key, , list], li) => {
+      const cy = this.TOP + li * this.LANE + this.LANE / 2;
+      const rows = list.split(" ").map(c => ROW[c]).filter(Boolean).sort((a, b) => a[4] - b[4]);
+      const placed = [];
+      rows.forEach(r => {
+        const w = this.w(r[4]), h = w * 0.7, x = this.x(r[4]);
+        // beeswarm: nearest free vertical slot to the lane centre
+        let y = cy;
+        for (let k = 0; k < 40; k++) {
+          const off = Math.ceil(k / 2) * 6 * (k % 2 ? -1 : 1);
+          const ty = cy + off;
+          const hit = placed.some(q => Math.abs(q.x - x) < (q.w + w) / 2 + 2 && Math.abs(q.y - ty) < (q.h + h) / 2 + 2);
+          if (!hit) { y = ty; break; }
+        }
+        const o = { iso: r[0], p: r[4], x, y, w, h, lane: li };
+        placed.push(o);
+        this.pins.push(o);
+      });
+    });
+    // draw pins (index order by price → stagger the slide-in)
+    const byPrice = [...this.pins].sort((a, b) => a.p - b.p);
+    byPrice.forEach((o, k) => {
       const g = document.createElementNS(this.NS, "g");
-      g.setAttribute("class", "pin");
+      g.setAttribute("class", "lpin");
       g.setAttribute("tabindex", "0");
       g.setAttribute("role", "button");
-      g.dataset.c = r[0];
-      g.style.setProperty("--d", Math.round(200 + x * 1.1));
-      g.innerHTML = `<line class="leader"/><circle class="spot"/><use href="#bm"/>`;
-      g.addEventListener("pointerenter", () => { pins.classList.add("focus"); this.pick(r[0]); });
-      g.addEventListener("focus", () => { pins.classList.add("focus"); this.pick(r[0]); });
-      g.addEventListener("blur", () => pins.classList.remove("focus"));
-      g.addEventListener("click", () => this.pick(r[0]));
-      pins.appendChild(g);
-      return { g, use: g.querySelector("use"), line: g.querySelector(".leader"), dot: g.querySelector(".spot"),
-               x, y, p: r[4], iso: r[0], cx: x, cy: y };
+      g.style.setProperty("--d", 150 + k * 18);
+      g.style.setProperty("--dx", `${this.X0 - o.x}px`);
+      g.innerHTML = `<rect class="hit" x="${o.x - o.w / 2 - 4}" y="${o.y - o.h / 2 - 4}" width="${o.w + 8}" height="${o.h + 8}" rx="8"/>
+        <use href="#bm" x="${o.x - o.w / 2}" y="${o.y - o.h / 2}" width="${o.w}" height="${o.h}"/>`;
+      g.addEventListener("pointerenter", () => { pinsG.classList.add("focus"); this.pick(o.iso); });
+      g.addEventListener("focus", () => { pinsG.classList.add("focus"); this.pick(o.iso); });
+      g.addEventListener("blur", () => pinsG.classList.remove("focus"));
+      g.addEventListener("click", () => this.pick(o.iso));
+      o.g = g;
+      pinsG.appendChild(g);
     });
-    $("#map").addEventListener("pointerleave", () => pins.classList.remove("focus"));
-    this.solve(this.vb).forEach((q, k) => { this.pins[k].cx = q[0]; this.pins[k].cy = q[1]; });
-    this.draw();
-    let rt;
-    addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => this.zoom(this.region, true), 150); });
+    $("#lineup").addEventListener("pointerleave", () => pinsG.classList.remove("focus"));
   },
 
-  /* Collision avoidance: push overlapping burgers apart, pull each back toward its country */
-  solve(vb) {
-    const gap = vb[2] * 0.004;
-    const B = this.pins.map(o => {
-      const w = this.size(o.p, vb[2]), h = w * 0.7;
-      return { w, h, tx: o.x, ty: o.y - h / 2 - gap * 1.5, px: o.x, py: o.y - h / 2 - gap * 1.5 };
-    });
-    for (let it = 0; it < 260; it++) {
-      for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) {
-        const a = B[i], b = B[j];
-        const ox = (a.w + b.w) / 2 + gap - Math.abs(a.px - b.px);
-        const oy = (a.h + b.h) / 2 + gap - Math.abs(a.py - b.py);
-        if (ox <= 0 || oy <= 0) continue;
-        if (ox < oy) { const s = (a.px < b.px ? -1 : 1) * ox / 2; a.px += s; b.px -= s; }
-        else { const s = (a.py < b.py ? -1 : 1) * oy / 2; a.py += s; b.py -= s; }
-      }
-      const pull = it < 200 ? 0.04 : 0;          // let the last passes only separate
-      for (const b of B) { b.px += (b.tx - b.px) * pull; b.py += (b.ty - b.py) * pull; }
+  background() {
+    const H = this.TOP + this.LANES.length * this.LANE, xu = this.x(US);
+    let s = `<rect class="ln-under" x="${this.X0}" y="${this.TOP}" width="${xu - this.X0}" height="${H - this.TOP}"/>
+             <rect class="ln-over" x="${xu}" y="${this.TOP}" width="${this.X1 - xu}" height="${H - this.TOP}"/>`;
+    for (let p = 3; p <= 9; p++) {
+      const x = this.x(p);
+      s += `<line class="ln-grid" x1="${x}" x2="${x}" y1="${this.TOP}" y2="${H}"/><text class="ln-tick" x="${x}" y="${H + 22}">$${p}</text>`;
     }
-    return B.map(b => [b.px, b.py]);
-  },
-
-  draw() {
-    const r = this.vb[2] * 0.0022;
-    for (const o of this.pins) {
-      const w = this.size(o.p), h = w * 0.7;
-      o.use.setAttribute("x", o.cx - w / 2); o.use.setAttribute("y", o.cy - h / 2);
-      o.use.setAttribute("width", w); o.use.setAttribute("height", h);
-      o.dot.setAttribute("cx", o.x); o.dot.setAttribute("cy", o.y); o.dot.setAttribute("r", r);
-      const bx = o.cx, by = o.cy + h / 2;                        // bottom of the burger
-      const far = Math.hypot(bx - o.x, by - o.y) > w * 0.35;
-      o.line.setAttribute("x1", o.x); o.line.setAttribute("y1", o.y);
-      o.line.setAttribute("x2", bx); o.line.setAttribute("y2", by);
-      o.line.style.opacity = far ? "" : "0";
-    }
-    $("#map").setAttribute("viewBox", this.vb.map(v => v.toFixed(1)).join(" "));
-    this.legend();
-  },
-
-  boxFor(region) {
-    const isos = this.REGIONS[region];
-    if (!isos) return [0, 0, 1000, 520];
-    const pts = isos.map(c => this.W.points[c]).filter(Boolean);
-    let x0 = Math.min(...pts.map(p => p[0])) - 50, x1 = Math.max(...pts.map(p => p[0])) + 50;
-    let y0 = Math.min(...pts.map(p => p[1])) - 60, y1 = Math.max(...pts.map(p => p[1])) + 40;
-    let w = x1 - x0, h = y1 - y0;
-    const ar = 1000 / 520;
-    if (w / h < ar) { const nw = h * ar; x0 -= (nw - w) / 2; w = nw; } else { const nh = w / ar; y0 -= (nh - h) / 2; h = nh; }
-    return [x0, y0, w, h];
-  },
-
-  zoom(region, instant) {
-    this.region = region;
-    $$("#regions .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.r === region));
-    const fromVb = [...this.vb], toVb = this.boxFor(region);
-    const from = this.pins.map(o => [o.cx, o.cy]), to = this.solve(toVb);
-    this.stop && this.stop();
-    this.stop = tween(0, 1, instant ? 0 : 1000, t => {
-      this.vb = fromVb.map((v, k) => v + (toVb[k] - v) * t);
-      this.pins.forEach((o, k) => { o.cx = from[k][0] + (to[k][0] - from[k][0]) * t; o.cy = from[k][1] + (to[k][1] - from[k][1]) * t; });
-      this.draw();
+    this.LANES.forEach(([, name, list], li) => {
+      const y = this.TOP + li * this.LANE;
+      const n = list.split(" ").filter(c => ROW[c]).length;
+      if (li) s += `<line class="ln-sep" x1="20" x2="${this.X1}" y1="${y}" y2="${y}"/>`;
+      s += `<text class="ln-lane" x="20" y="${y + this.LANE / 2 + 2}">${L(...name)}</text>
+            <text class="ln-count" x="20" y="${y + this.LANE / 2 + 22}">${L(`${n}か国`, `${n} countries`)}</text>`;
     });
+    s += `<line class="ln-us" x1="${xu}" x2="${xu}" y1="${this.TOP - 8}" y2="${H}"/>
+          <text class="ln-uslbl" x="${xu}" y="${this.TOP - 16}">${L("アメリカ", "US")} ${usd(US)}</text>
+          <text class="ln-side u" x="${this.X0 + 6}" y="${this.TOP - 16}">← ${L("アメリカより安い", "CHEAPER THAN US")}</text>
+          <text class="ln-side o" x="${this.X1 - 6}" y="${this.TOP - 16}" text-anchor="end">${L("アメリカより高い", "PRICIER THAN US")} →</text>`;
+    $("#lnBg").innerHTML = s;
+  },
+
+  labels() {                         // one clear label for the selected burger
+    const o = this.pins.find(p => p.iso === this.sel);
+    const top = $("#lnTop");
+    if (!o) { top.innerHTML = ""; return; }
+    const above = o.y - o.h / 2 - 12 > this.TOP + o.lane * this.LANE + 8;
+    const ty = above ? o.y - o.h / 2 - 10 : o.y + o.h / 2 + 20;
+    top.innerHTML = `<rect class="ln-tag"/><text class="ln-label" x="${o.x}" y="${ty}">${nm(o.iso)}  ${usd(o.p)}</text>`;
+    const bb = top.querySelector("text").getBBox();
+    const r = top.querySelector("rect");
+    const pad = 6;
+    let x = bb.x - pad;
+    const shift = Math.min(0, this.X1 - (bb.x + bb.width + pad)) + Math.max(0, 20 - x);
+    top.querySelector("text").setAttribute("x", o.x + shift);
+    Object.entries({ x: x + shift, y: bb.y - 3, width: bb.width + pad * 2, height: bb.height + 6, rx: 6 }).forEach(([k, v]) => r.setAttribute(k, v));
   },
 
   pick(iso, force) {
     const r = ROW[iso]; if (!r) return;
-    if (iso === this.sel && !force && this.picked) return;
-    this.picked = true;
+    if (iso === this.sel && !force) return;
     this.sel = iso;
     this.pins.forEach(o => o.g.classList.toggle("sel", o.iso === iso));
-    $$("#land path.on").forEach(p => p.classList.remove("on"));
-    $$(`#land path[data-c="${iso}"]`).forEach(p => p.classList.add("on"));
+    this.labels();
     const pct = Math.round(Math.abs(r[5]) * 100), cheap = r[5] < 0;
     const rel = iso === "USA"
       ? L("基準（0%）", "The baseline (0%)")
       : L(`アメリカより <b class="${cheap ? "u" : "o"}">${pct}%${cheap ? "安い" : "高い"}</b>`,
           `<b class="${cheap ? "u" : "o"}">${pct}% ${cheap ? "cheaper" : "pricier"}</b> than the US`);
     const rank = [...D.latest].sort((a, b) => b[4] - a[4]).findIndex(x => x[0] === iso) + 1;
-    const card = $("#mapcard");
+    const card = $("#linecard");
     card.innerHTML = `<span class="n">${nm(iso)}</span><span class="p">${usd(r[4])}</span><span class="l">${money(r[1], r[2])}</span>
       <span class="r">${rel}</span><span class="r">${L(`世界 ${rank}位 / ${D.latest.length}か国`, `#${rank} of ${D.latest.length}`)}</span>`;
     restartAnim(card, "bump");
   },
 
-  legend() {
-    const svg = $("#map"); if (!svg.clientWidth) return;
-    const px = svg.clientWidth / this.vb[2];
-    $("#legend").innerHTML = [3, 6, 9].map(p => {
-      const w = this.size(p) * px;
-      return `<figure><svg viewBox="0 0 200 140" style="width:${w.toFixed(1)}px;height:${(w * 0.7).toFixed(1)}px"><use href="#bm"/></svg>$${p}</figure>`;
-    }).join("");
-  },
-
   render() {
-    const names = { world: ["世界", "World"], americas: ["アメリカ大陸", "Americas"], europe: ["ヨーロッパ", "Europe"], mideast: ["中東", "Middle East"], asia: ["アジア・オセアニア", "Asia-Pacific"] };
-    $("#regions").innerHTML = Object.keys(this.REGIONS).map(k =>
-      `<button type="button" class="chip" data-r="${k}" aria-pressed="${k === this.region}">${L(...names[k])}</button>`).join("");
-    $$("#regions .chip").forEach(b => b.addEventListener("click", () => this.zoom(b.dataset.r)));
-    this.pins.forEach(o => o.g.setAttribute("aria-label", `${nm(o.iso)} ${usd(ROW[o.iso][4])}`));
+    this.background();
+    this.pins.forEach(o => o.g.setAttribute("aria-label", `${nm(o.iso)} ${usd(o.p)}`));
     this.pick(this.sel, true);
   },
-  enter() {
-    this.zoom(this.region, true);
-    this.pick(this.sel, true);
-    later.add(() => $("#pins").classList.add("settled"), reduce ? 0 : 2200);
-  },
-  leave() { this.stop && this.stop(); $("#pins").classList.remove("settled", "focus"); }
+  enter() { this.pick(this.sel, true); },
+  leave() { $("#lnPins").classList.remove("focus"); }
 };
 
 /* =========================================================
-   Slide 8 — wrap-up with falling burgers
+   Slide 7 — wrap-up with falling burgers
    ========================================================= */
 const s7 = {
   init() {
@@ -557,7 +428,7 @@ const s7 = {
    Deck navigation
    ========================================================= */
 const slides = $$(".slide");
-const hooks = [s1, s2, s3, s4, s5, s6, sMap, s7];
+const hooks = [s1, s2, s3, s4, s6, sLine, s7];
 const track = $("#track");
 let cur = -1;
 
@@ -617,7 +488,7 @@ function applyLang() {
   $$("[data-setlang]").forEach(b => b.setAttribute("aria-pressed", b.dataset.setlang === lang));
   $("#prev").setAttribute("aria-label", L("前のスライド", "Previous slide"));
   $("#next").setAttribute("aria-label", L("次のスライド", "Next slide"));
-  s2.render(); s3.render(); s4.render(); s5.render(); s6.render(); sMap.render();
+  s2.render(); s3.render(); s4.render(); s6.render(); sLine.render();
 }
 $$("[data-setlang]").forEach(b => b.addEventListener("click", () => {
   lang = b.dataset.setlang;
@@ -630,7 +501,7 @@ addEventListener("hashchange", () => {
 });
 
 /* ---------- Start ---------- */
-s3.init(); s4.init(); s5.init(); sMap.init(); s7.init();
+s3.init(); s4.init(); sLine.init(); s7.init();
 applyLang();
 const start = parseInt(location.hash.slice(1), 10);
 go(Number.isFinite(start) ? start - 1 : 0, true);

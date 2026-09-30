@@ -148,25 +148,7 @@
       </div>
     </section>
 
-    <!-- 5. Quiz -->
-    <section class="slide s5" aria-roledescription="slide">
-      <div class="inner">
-        <h2><span class="ja">どっちが安い？</span><span class="en">Which is cheaper?</span></h2>
-        <p class="lead"><span class="ja">ドル換算で安いのはどっち？タップして答えよう。</span><span class="en">Which one costs less in dollars? Tap to answer.</span></p>
-        <div class="score" id="score" aria-label="Score"></div>
-        <div class="vs" id="vs">
-          <button type="button" class="card" data-side="0"><span class="cn"></span><span class="bgr-wrap"><svg class="bgr" viewBox="0 0 200 140" aria-hidden="true"><use href="#bm"/></svg></span><span class="cp">?</span></button>
-          <span class="vs-mid">VS</span>
-          <button type="button" class="card" data-side="1"><span class="cn"></span><span class="bgr-wrap"><svg class="bgr" viewBox="0 0 200 140" aria-hidden="true"><use href="#bm"/></svg></span><span class="cp">?</span></button>
-        </div>
-        <div class="quizfoot">
-          <p class="verdict" id="quizMsg" aria-live="polite"></p>
-          <button type="button" class="pill solid" id="quizNext" hidden></button>
-        </div>
-      </div>
-    </section>
-
-    <!-- 6. ¥1,000 -->
+    <!-- 5. ¥1,000 -->
     <section class="slide s6" aria-roledescription="slide">
       <div class="inner">
         <h2><span class="ja">1,000円で何個買える？</span><span class="en">What does ¥1,000 buy?</span></h2>
@@ -180,28 +162,27 @@
       </div>
     </section>
 
-    <!-- 7. Burger map -->
-    <section class="slide s-map" aria-roledescription="slide">
+    <!-- 6. Burger lineup: every country at a glance -->
+    <section class="slide s-line" aria-roledescription="slide">
       <div class="inner">
-        <div class="maphead">
+        <div class="linehead">
           <div>
-            <h2><span class="ja">世界のビッグマック地図</span><span class="en">A world of burgers</span></h2>
-            <p class="lead"><span class="ja">バーガーの大きさ＝ドル換算の値段。点は国の位置、線でつながっています。</span><span class="en">Bigger burger, higher price in dollars. Each line leads to the country's location. Hover or tap for details.</span></p>
+            <h2><span class="ja">54か国のビッグマック</span><span class="en">54 countries, one lineup</span></h2>
+            <p class="lead"><span class="ja">右にあるほど高い（ドル換算）。点線がアメリカの値段。バーガーにカーソルを乗せるかタップしてみよう。</span><span class="en">Further right means pricier in dollars. The dashed line is the US price. Hover over or tap any burger.</span></p>
           </div>
-          <div class="regions" id="regions" role="group" aria-label="Zoom"></div>
+          <div class="linecard" id="linecard" aria-live="polite"></div>
         </div>
-        <div class="mapbox">
-          <svg class="map" id="map" viewBox="0 0 1000 520" role="group" aria-label="World map of Big Mac prices">
-            <g id="land"></g>
-            <g id="pins"></g>
+        <div class="linebox">
+          <svg class="lineup" id="lineup" viewBox="0 0 1000 580" role="group" aria-label="Big Mac prices in 54 countries by region">
+            <g id="lnBg"></g>
+            <g id="lnPins"></g>
+            <g id="lnTop"></g>
           </svg>
-          <div class="mapcard" id="mapcard" aria-live="polite"></div>
-          <div class="legend" id="legend" aria-hidden="true"></div>
         </div>
       </div>
     </section>
 
-    <!-- 8. Wrap-up -->
+    <!-- 7. Wrap-up -->
     <section class="slide s7" aria-roledescription="slide">
       <div class="rain" id="rain" aria-hidden="true"></div>
       <div class="inner center">
@@ -228,7 +209,6 @@
 </footer>
 
 <script src="data.js"></script>
-<script src="map.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
